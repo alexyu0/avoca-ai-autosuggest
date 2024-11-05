@@ -55,7 +55,8 @@ layout = [
     [full_chat_gpt_answer],
     [sg.Button("Cancel")],
 ]
-WINDOW = sg.Window("Keyboard Test", layout, return_keyboard_events=True, use_default_focus=False)
+# WINDOW = sg.Window("Keyboard Test", layout, return_keyboard_events=True, use_default_focus=False)
+WINDOW = sg.Window("Keyboard Test", layout)
 
 
 def background_recording_loop() -> None:
@@ -69,42 +70,43 @@ def background_recording_loop() -> None:
     audio.save_audio_file(audio_data)
 
 
-while True:
-    event, values = WINDOW.read()
-    if event in ["Cancel", sg.WIN_CLOSED]:
-        logger.debug("Closing...")
-        break
+def run_ui():
+    while True:
+        event, values = WINDOW.read()
+        if event in ["Cancel", sg.WIN_CLOSED]:
+            logger.debug("Closing...")
+            break
 
-    if event in ("r", "R"):  # start recording
-        logger.debug("Starting recording...")
-        record_status_button.metadata.state = not record_status_button.metadata.state
-        if record_status_button.metadata.state:
-            WINDOW.perform_long_operation(background_recording_loop, "-RECORDING-")
-        record_status_button.update(image_data=ON_IMAGE if record_status_button.metadata.state else OFF_IMAGE)
+        if event in ("r", "R"):  # start recording
+            logger.debug("Starting recording...")
+            record_status_button.metadata.state = not record_status_button.metadata.state
+            if record_status_button.metadata.state:
+                WINDOW.perform_long_operation(background_recording_loop, "-RECORDING-")
+            record_status_button.update(image_data=ON_IMAGE if record_status_button.metadata.state else OFF_IMAGE)
 
-    elif event in ("a", "A"):  # send audio to OpenAI Whisper model
-        logger.debug("Analyzing audio...")
-        analyzed_text_label.update("Start analyzing...")
-        WINDOW.perform_long_operation(llm.transcribe_audio, "-WHISPER COMPLETED-")
+        elif event in ("a", "A"):  # send audio to OpenAI Whisper model
+            logger.debug("Analyzing audio...")
+            analyzed_text_label.update("Start analyzing...")
+            WINDOW.perform_long_operation(llm.transcribe_audio, "-WHISPER COMPLETED-")
 
-    elif event == "-WHISPER COMPLETED-":
-        audio_transcript = values["-WHISPER COMPLETED-"]
-        analyzed_text_label.update(audio_transcript)
+        elif event == "-WHISPER COMPLETED-":
+            audio_transcript = values["-WHISPER COMPLETED-"]
+            analyzed_text_label.update(audio_transcript)
 
-        # Generate quick answer:
-        quick_chat_gpt_answer.update("Chatgpt is working...")
-        WINDOW.perform_long_operation(
-            lambda: llm.generate_answer(audio_transcript, short_answer=True, temperature=0),
-            "-CHAT_GPT SHORT ANSWER-",
-        )
+            # Generate quick answer:
+            quick_chat_gpt_answer.update("Chatgpt is working...")
+            WINDOW.perform_long_operation(
+                lambda: llm.generate_answer(audio_transcript, short_answer=True, temperature=0),
+                "-CHAT_GPT SHORT ANSWER-",
+            )
 
-        # Generate full answer:
-        full_chat_gpt_answer.update("Chatgpt is working...")
-        WINDOW.perform_long_operation(
-            lambda: llm.generate_answer(audio_transcript, short_answer=False, temperature=0.7),
-            "-CHAT_GPT LONG ANSWER-",
-        )
-    elif event == "-CHAT_GPT SHORT ANSWER-":
-        quick_chat_gpt_answer.update(values["-CHAT_GPT SHORT ANSWER-"])
-    elif event == "-CHAT_GPT LONG ANSWER-":
-        full_chat_gpt_answer.update(values["-CHAT_GPT LONG ANSWER-"])
+            # Generate full answer:
+            full_chat_gpt_answer.update("Chatgpt is working...")
+            WINDOW.perform_long_operation(
+                lambda: llm.generate_answer(audio_transcript, short_answer=False, temperature=0.7),
+                "-CHAT_GPT LONG ANSWER-",
+            )
+        elif event == "-CHAT_GPT SHORT ANSWER-":
+            quick_chat_gpt_answer.update(values["-CHAT_GPT SHORT ANSWER-"])
+        elif event == "-CHAT_GPT LONG ANSWER-":
+            full_chat_gpt_answer.update(values["-CHAT_GPT LONG ANSWER-"])

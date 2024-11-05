@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "hack-interview"
+name = "avoca-ai-autosuggest"
 version = "0.1.0"
 description = ""
-authors = [ "slgero <sersavvov@gmail.com>" ]
+authors = [ "alexyu0 <alexyu0925@gmail.com>" ]
 readme = "README.md"
-packages = [ { include = "hack_interview" } ]
+package-mode = false
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = "~3.11.10"
 numpy = "^1.26.0"
 openai = "^0.28.1"
 pysimplegui = "^4.60.5"
