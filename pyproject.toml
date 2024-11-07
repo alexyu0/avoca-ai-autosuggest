@@ -9,11 +9,15 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "~3.11.10"
 numpy = "^1.26.0"
-openai = "^0.28.1"
+openai = "~1.54.2"
 pysimplegui = "^4.60.5"
 soundcard = "^0.4.2"
 soundfile = "^0.12.1"
 loguru = "^0.7.2"
+poetry-dotenv-plugin = "^0.2.0"
+deepgram-sdk = "^3.7.6"
+pyaudio = "^0.2.14"
+speechrecognition = "^3.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.9.1"

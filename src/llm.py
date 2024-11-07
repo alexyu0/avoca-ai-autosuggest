@@ -1,11 +1,13 @@
 from loguru import logger
+from deepgram import (
+    DeepgramClient,
+    PrerecordedOptions,
+    FileSource,
+)
 import openai
-
 
 from src.constants import INTERVIEW_POSTION, OPENAI_API_KEY, OUTPUT_FILE_NAME
 
-
-openai.api_key = OPENAI_API_KEY
 
 SYSTEM_PROMPT = """
 You are a sales agent for Avoca Air Condioning company.
@@ -40,7 +42,8 @@ morning to confirm the exact time. We don't provide service on the weekends."
 Commonly Asked Questions:
 *To schedule them in for a slot the earliest we can do is the day after tomorrow (or next business
 day). The current time is 12:35 PM Thursday, February 22nd so the first day you can schedule them
-is Monday morning. A live agent can still call between 7:30 AM to 8:30 AM tomorrow, Friday, February 23rd though.
+is Monday morning. A live agent can still call between 7:30 AM to 8:30 AM tomorrow, Friday,
+February 23rd though.
 What hours are you open?
 8-5 Monday Though Friday, 5 days a week
 When can we speak to a live agent?
@@ -61,6 +64,8 @@ LONGER_INSTRUCTION = (
     "more than 150 words."
 )
 
+openai.api_key = OPENAI_API_KEY
+
 
 def transcribe_audio(path_to_file: str = OUTPUT_FILE_NAME) -> str:
     """
@@ -75,13 +80,24 @@ def transcribe_audio(path_to_file: str = OUTPUT_FILE_NAME) -> str:
     Raises:
         Exception: If the audio file fails to transcribe.
     """
-    with open(path_to_file, "rb") as audio_file:
-        try:
-            transcript = openai.Audio.translate("whisper-1", audio_file)
-        except Exception as error:
-            logger.error(f"Can't transcribe audio: {error}")
-            raise error
-    return transcript["text"]
+
+    try:
+        deepgram = DeepgramClient()
+        with open(path_to_file, "rb") as file:
+            buffer_data = file.read()
+        payload: FileSource = {"buffer": buffer_data}
+
+        options = PrerecordedOptions(
+            model="nova-2",
+            smart_format=True,
+        )
+        response = deepgram.listen.rest.v("1").transcribe_file(payload, options)
+
+        print(dir(response))
+        return response.to_json(indent=4)
+    except Exception as e:
+        logger.error(f"Can't transcribe audio: {e}")
+        raise e
 
 
 def generate_answer(transcript: str, short_answer: bool = True, temperature: float = 0.7) -> str:
