@@ -4,10 +4,12 @@ from deepgram import (
     PrerecordedOptions,
     FileSource,
 )
-import openai
+from openai import OpenAI
 
 from src.constants import INTERVIEW_POSTION, OPENAI_API_KEY, OUTPUT_FILE_NAME
 
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 SYSTEM_PROMPT = """
 You are a sales agent for Avoca Air Condioning company.
@@ -63,8 +65,6 @@ LONGER_INSTRUCTION = (
     "Before answering, take a deep breath and think one step at a time. Believe the answer in no "
     "more than 150 words."
 )
-
-openai.api_key = OPENAI_API_KEY
 
 
 def transcribe_audio(path_to_file: str = OUTPUT_FILE_NAME) -> str:
@@ -128,7 +128,7 @@ def generate_answer(transcript: str, short_answer: bool = True, temperature: flo
     else:
         system_prompt = SYSTEM_PROMPT + LONGER_INSTRUCTION
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             temperature=temperature,
             messages=[
@@ -139,4 +139,4 @@ def generate_answer(transcript: str, short_answer: bool = True, temperature: flo
     except Exception as error:
         logger.error(f"Can't generate answer: {error}")
         raise error
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
