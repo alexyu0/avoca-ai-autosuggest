@@ -9,14 +9,19 @@ import speech_recognition as sr
 import time
 import wave
 
-from src.constants import OUTPUT_FILE_NAME, RECORD_SEC, SAMPLE_RATE
+from src.llm import transcribe_audio_realtime
+from src.constants import OUTPUT_FILE_NAME, RECORD_SEC, SAMPLE_RATE, TranscriptionModes
 
 
 SPEAKER_ID = str(sc.default_speaker().name)
 MIC_ID = str(sc.default_microphone().name)
 
 
-def record_background(audio_data: list[bytes], record_sec: int = RECORD_SEC) -> Callable:
+def record_background(
+    audio_data: list[bytes],
+    transcription_mode: TranscriptionModes,
+    record_sec: int = RECORD_SEC
+) -> Callable:
     """
     Records an audio batch for a specified duration.
 
@@ -33,12 +38,37 @@ def record_background(audio_data: list[bytes], record_sec: int = RECORD_SEC) -> 
         print(audio_sample)
         ```
     """
+
+    """
     def callback(_, audio):
         audio_data.append(audio.get_wav_data())
 
+    def realtime_callback(_, audio):
+        transcribe_audio_realtime(audio.get_wav_data())
+        audio_data.append(audio.get_wav_data())
+
     r = sr.Recognizer()
+    r.non_speaking_duration = 1
+    r.pause_threshold = 1
     s = sr.Microphone()
-    return r.listen_in_background(s, callback)
+
+    if transcription_mode == TranscriptionModes.Live:
+        return r.listen_in_background(s, realtime_callback)
+    else:
+        return r.listen_in_background(s, callback)
+    """
+
+    p = pyaudio.PyAudio()
+    device_info = p.get_default_input_device_info()
+    sample_rate = device_info.get("defaultSampleRate")
+    m = sr.Microphone()
+    with m as s:
+        audio_samples = []
+        for _ in range(0, int(sample_rate / 1024 * record_sec)):
+            audio_samples.append(s.stream.read(1024))
+
+        transcribe_audio_realtime(b''.join(audio_samples))
+        audio_data.append(b''.join(audio_samples))
 
 
 def save_audio_file(
